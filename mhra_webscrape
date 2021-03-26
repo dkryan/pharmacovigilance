@@ -1,0 +1,90 @@
+import csv
+from bs4 import BeautifulSoup
+import numpy as np
+import os
+import pandas as pd
+import pickle
+import scipy as sp
+import selenium
+import time
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+
+# Random Time Delays For Sleeps
+from random import randint
+from random import shuffle
+from time import sleep
+
+# Downloading libraries
+import requests, zipfile
+from io import StringIO
+
+
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+
+driver.get(f'https://info.mhra.gov.uk/drug-analysis-profiles/)
+
+urls = []
+
+elements = driver.find_element_by_id('top_index_level')
+
+for element in elements.find_elements_by_tag_name('div'):
+    print(element)
+    print(element.text)
+    element.click()
+    
+    #letter 
+    letter = element.text
+    
+    #Get the elements of the second index:
+    new_elements = driver.find_element_by_id(f'top_index_level_{letter}')
+    
+    for new_element in new_elements.find_elements_by_tag_name('div'): 
+        print(new_element.text)
+        new_element.click()
+        
+        temp_html = driver.page_source 
+        soup = BeautifulSoup(temp_html)
+        
+        for a in soup.find_all('a', href=True):
+            print("Found the URL:", a['href'])
+            urls.append(a['href'])
+            
+  urls = pd.DataFrame(pd.DataFrame(urls)[0].unique())
+  
+
+  urls.to_csv('mhra_drugs.csv')
+  
+  for link in enumerate(urls[0][1930:]): 
+    
+    print(link[0])
+    
+    #get the name of the drug 
+    driver.get(f'https://info.mhra.gov.uk/drug-analysis-profiles/{link[1]}')
+    time.sleep(5)
+    elements = driver.find_elements_by_id('headerPanelDrugOnly')
+    for element in elements: 
+        name = element.text
+        print(name)
+    
+    #print the link
+    elems = driver.find_elements_by_xpath("//a[@href]")
+    temp_url = []
+    for elem in elems:
+        temp_url.append(elem.get_attribute("href"))
+    temp_url = temp_url[-1]
+    print(temp_url)
+    
+    #extract files 
+    r = requests.get(temp_url)
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(f"mhra/{name}")
+    
